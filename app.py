@@ -76,10 +76,49 @@ def remove_attendance(rollno: str, date: str):
     save_data(data)
     return {"success": True, "rollno": rollno, "date": date, "status": "removed"}
 
+def add_student(name: str, rollno: str):
+    data = load_data()
+    if any(s["rollno"] == rollno for s in data["students"]):
+        raise ValueError(f"Roll no {rollno} pehle se exist karta hai")
+    data["students"].append({
+        "name": name,
+        "rollno": rollno,
+        "attendance": {d: None for d in data["days"]},
+        "total_days": 0,
+        "days_present": 0,
+    })
+    save_data(data)
+    return {"success": True, "name": name, "rollno": rollno}
+
+def remove_student(rollno: str):
+    data = load_data()
+    students = data["students"]
+
+    student = next((s for s in students if s["rollno"] == rollno), None)
+    if student is None:
+        raise ValueError(f"Roll no {rollno} wala student nahi mila")
+
+    students.remove(student)
+    save_data(data)
+    return {"success": True, "name": student["name"], "rollno": rollno}
+
+def add_date(date: str):
+    data = load_data()
+    if date in data["days"]:
+        raise ValueError(f"{date} pehle se hai")
+    data["days"].append(date)
+    for s in data["students"]:
+        s["attendance"][date] = None
+    save_data(data)
+    return {"success": True, "date": date}
+
 TOOLS = {
     "get_attendance_percentage": get_attendance_percentage,
     "mark_attendance": mark_attendance,
     "remove_attendance": remove_attendance,
+    "add_student": add_student,
+    "add_date": add_date,
+    "remove_student": remove_student,
 }
 
 
@@ -90,7 +129,9 @@ Tools:
 - get_attendance_percentage(rollno: string)
 - mark_attendance(rollno: string, date: string as YYYY-MM-DD, status: "P" or "A")
 - remove_attendance(rollno: string, date: string as YYYY-MM-DD)
-
+- add_student(name: string, rollno: string)
+- add_date(date: string as YYYY-MM-DD)
+- remove_student(rollno: string)
 Reply with ONLY one JSON object, no extra text:
 {"tool": "<tool name>", "arguments": {...}}
 
